@@ -1,6 +1,7 @@
 import { ScrollView } from "react-native-gesture-handler";
 import { Card } from "react-native-elements";
 import { Text } from "react-native-elements";
+import { Button,Modal,View } from "react-native";
 
 const ContactScreen = () =>{
     return (
