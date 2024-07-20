@@ -18,6 +18,7 @@ import { fetchComments } from '../features/comments/commentsSlice';
 import ReservationScreen from './ReservationScreen';
 import FavoritesScreen from './FavoritesScreen'; 
 
+
 const Drawer = createDrawerNavigator();
 
 const screenOptions = {
