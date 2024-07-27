@@ -1,70 +1,107 @@
 import { useState } from 'react';
-import {Text,View,StyleSheet,Switch,Button,Alert,Platform,ScrollView} from 'react-native';
+import {
+    Text,
+    View,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Button,
+    Alert
+} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Animatable from 'react-native-animatable';
+import * as Notifications from 'expo-notifications';
 
 const ReservationScreen = () => {
-
     const [campers, setCampers] = useState(1);
     const [hikeIn, setHikeIn] = useState(false);
     const [date, setDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(false);
 
-
     const onDateChange = (event, selectedDate) => {
         const currentDate = selectedDate || date;
-       
-        setShowCalendar(Platform.OS === 'ios'); 
-        setDate(currentDate); 
+        setShowCalendar(Platform.OS === 'ios');
+        setDate(currentDate);
     };
 
-    
     const handleReservation = () => {
-        
+        const message = `Number of Campers: ${campers}
+                            \nHike-In? ${hikeIn}
+                            \nDate: ${date.toLocaleDateString('en-US')}`;
         Alert.alert(
-            'Begin Search?', 
-            `Number of Campers: ${campers}\nHike-In: ${hikeIn ? 'Yes' : 'No'}\nDate: ${date.toLocaleDateString('en-US')}`,
+            'Begin Search?',
+            message,
             [
                 {
-                    text: 'Cancel', 
-                    
-                    onPress: () => resetForm(),
-                   
-                    style: 'cancel', 
+                    text: 'Cancel',
+                    onPress: () => {
+                        console.log('Reservation Search Canceled');
+                        resetForm();
+                    },
+                    style: 'cancel'
                 },
                 {
-                     // Label for the OK button
                     text: 'OK',
-                    // Action to take if OK is pressed
-                    onPress: () => 
-                        resetForm()
-                    
-                },
+                    onPress: () => {
+                        presentLocalNotification(
+                            date.toLocaleDateString('en-US')
+                        );
+                        resetForm();
+                    }
+                }
             ],
-           // The alert dialog cannot be dismissed by tapping outside of it
-           { cancelable: false } 
+            { cancelable: false }
         );
+        console.log('campers:', campers);
+        console.log('hikeIn:', hikeIn);
+        console.log('date:', date);
     };
-    
 
-    // Function to reset the form to default values
     const resetForm = () => {
         setCampers(1);
         setHikeIn(false);
         setDate(new Date());
         setShowCalendar(false);
-    }; 
+    };
+
+    const presentLocalNotification = async (reservationDate) => {
+        const sendNotification = () => {
+            Notifications.setNotificationHandler({
+                handleNotification: async () => ({
+                    shouldShowAlert: true,
+                    shouldPlaySound: true,
+                    shouldSetBadge: true
+                })
+            });
+
+            Notifications.scheduleNotificationAsync({
+                content: {
+                    title: 'Your Campsite Reservation Search',
+                    body: `Search for ${reservationDate} requested`
+                },
+                trigger: null
+            });
+        };
+
+        let permissions = await Notifications.getPermissionsAsync();
+        if (!permissions.granted) {
+            permissions = await Notifications.requestPermissionsAsync();
+        }
+        if (permissions.granted) {
+            sendNotification();
+        }
+    };
 
     return (
         <ScrollView>
-            <Animatable.View animation="zoomIn" duration={2000} delay={1000}>
+            <Animatable.View animation='zoomIn' duration={2000} delay={1000}>
                 <View style={styles.formRow}>
                     <Text style={styles.formLabel}>Number of Campers:</Text>
                     <Picker
                         style={styles.formItem}
                         selectedValue={campers}
-                        onValueChange={(itemValue) => setCampers(itemValue)} // Update campers state
+                        onValueChange={(itemValue) => setCampers(itemValue)}
                     >
                         <Picker.Item label='1' value={1} />
                         <Picker.Item label='2' value={2} />
@@ -80,14 +117,14 @@ const ReservationScreen = () => {
                         style={styles.formItem}
                         value={hikeIn}
                         trackColor={{ true: '#5637DD', false: null }}
-                        onValueChange={(value) => setHikeIn(value)} // Update hikeIn state
+                        onValueChange={(value) => setHikeIn(value)}
                     />
                 </View>
                 <View style={styles.formRow}>
                     <Text style={styles.formLabel}>Date:</Text>
                     <Button
-                        onPress={() => setShowCalendar(!showCalendar)} // Toggle calendar visibility
-                        title={date.toLocaleDateString('en-US')} // Display selected date
+                        onPress={() => setShowCalendar(!showCalendar)}
+                        title={date.toLocaleDateString('en-US')}
                         color='#5637DD'
                         accessibilityLabel='Tap me to select a reservation date'
                     />
@@ -98,12 +135,12 @@ const ReservationScreen = () => {
                         value={date}
                         mode='date'
                         display='default'
-                        onChange={onDateChange} // Handle date change
+                        onChange={onDateChange}
                     />
                 )}
                 <View style={styles.formRow}>
                     <Button
-                        onPress={handleReservation} // Handle reservation submission
+                        onPress={() => handleReservation()}
                         title='Search Availability'
                         color='#5637DD'
                         accessibilityLabel='Tap me to search for available campsites to reserve'
@@ -114,7 +151,6 @@ const ReservationScreen = () => {
     );
 };
 
-// Styles for the component
 const styles = StyleSheet.create({
     formRow: {
         alignItems: 'center',
